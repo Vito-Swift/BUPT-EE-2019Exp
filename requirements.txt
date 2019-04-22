@@ -1,0 +1,6 @@
+bokeh
+pymysql
+json
+requests
+xlrd
+configparser

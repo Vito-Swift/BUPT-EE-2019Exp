@@ -7,7 +7,7 @@ from datetime import datetime
 from multiprocessing.dummy import Pool as ThreadPool
 
 
-def printTimeStamp(prefix="", end='\n', noise=True):
+def print_time_stamp(prefix="", end='\n', noise=True):
     now = datetime.now()
     date_time = now.strftime("%m/%d/%Y-%H:%M:%S")
     if noise:
@@ -26,11 +26,10 @@ def get_database_info_from_config(path):
     except Exception as e:
         print("[ERROR] Fail to Open Config File: {}".format(e))
 
-    print(config.sections())
-    return config['DATABASE']['Server'], \
-           config['DATABASE']['Username'], \
-           config['DATABASE']['Password'], \
-           config['DATABASE']['Database']
+    return (config['DATABASE']['Server'],
+            config['DATABASE']['Username'],
+            config['DATABASE']['Password'],
+            config['DATABASE']['Database'])
 
 
 def get_request_url_from_config(path):
@@ -65,8 +64,8 @@ def get_fetched_data(stock_list, url, process_num=100):
     count = 1
 
     def get_result(stock_code, stock_name, api, count):
-        print("{}\tFetching Stock Data from Website\tTaskID: {}/{}\t{}".format(
-            printTimeStamp(noise=False),
+        print("[INFO] {}\tFetching Stock Data from Website\tTaskID: {}/{}\t{}".format(
+            print_time_stamp(noise=False),
             count,
             stock_num,
             stock_name))
@@ -75,7 +74,6 @@ def get_fetched_data(stock_list, url, process_num=100):
         while not is_fetched:
             try:
                 r = requests.get(api)
-                r.encoding = 'utf-8'
                 json_str = json.dumps(r.text)
                 is_fetched = True
             except Exception as e:
