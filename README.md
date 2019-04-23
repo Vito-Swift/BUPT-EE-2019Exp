@@ -175,6 +175,25 @@ Well done! We have finished all the preparation before emitting the project!
 
 ---
 
+## Run the Program
+
+### Create Your Own Config File
+
+Sample config file located in ./sample.conf
+
+```
+[DATABASE]
+Server = YOUR_DATABASE_ADDR
+Database = YOUR_DATABASE_NAME
+Username = YOUR_USER_NAME
+Password = YOUR_PASSWORD
+
+[DEFAULT]
+URL = REQUEST_URL
+```
+
+Create your own one before going forward
+
 ### Fetching Data from Website
 
 ```
