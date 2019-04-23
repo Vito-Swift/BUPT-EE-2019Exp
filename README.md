@@ -1,10 +1,20 @@
 # BUPT EE Experiment, 2019 Spring
 
+![Demo](https://github.com/Vito-Swift/BUPT-EE-2019Exp/assets/show.png)
+
 Environment: Ubuntu 18.04
 
 Database Version: MySQL 2.5.25 ubuntu
 
 ---
+
+## How to Start
+
+Fetch the complete source code to local
+```
+git clone https://github.com/Vito-Swift/BUPT-EE-2019Exp.git
+```
+
 
 ## Pre-Configuration
 
