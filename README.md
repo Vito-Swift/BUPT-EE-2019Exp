@@ -2,7 +2,11 @@
 
 ![Demo](https://github.com/Vito-Swift/BUPT-EE-2019Exp/blob/master/assets/show.png)
 
-Environment: Ubuntu 18.04
+---
+
+### Test Environment
+
+OS: Ubuntu 18.04 / Debian 9
 
 Database Version: MySQL 2.5.25 ubuntu
 
