@@ -1,6 +1,5 @@
 bokeh
 pymysql
-json
 requests
 xlrd
 gevent
