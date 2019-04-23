@@ -197,11 +197,29 @@ Create your own one before going forward
 ### Fetching Data from Website
 
 ```
-python3 ${PROJ_ROOT_DIR}/collect.py
+$ python3 ${PROJ_ROOT_DIR}/collect.py
+[MESSAGE] Emitting Database Initialization...
+[INFO] Collecting Database Info from Config:./exp.conf
+[INFO] Connecting to database...
+[INFO] Database connected!
+[INFO] Initializing Database Table...
+[MESSAGE] Emitting Fetching Data from Website
+[INFO] Collecting StockList from Excel:StockList
+[INFO] Collecting Request URL from Config:./exp.conf
+
+...
+[INFO] 04/24/2019-05:17:57	Fetching Stock Data from Website	TaskID: 524/525	omit_name
+[INFO] 04/24/2019-05:17:57	Fetching Stock Data from Website	TaskID: 498/525	omit_name
+[INFO] 04/24/2019-05:17:57	Fetching Stock Data from Website	TaskID: 504/525	omit_name
+[INFO] 04/24/2019-05:17:58	Fetching Stock Data from Website	TaskID: 492/525	omit_name
+[INFO] 04/24/2019-05:17:59	Fetching Stock Data from Website	TaskID: 470/525	omit_name
+[MESSAGE] Inserting Fetched Data to Local...
 ```
 
 ### Show the WebPage as A Server
 
 ```
-bokeh serve --show ${PROJ_ROOT_DIR}/main.py
+$bokeh serve --show ${PROJ_ROOT_DIR}/main.py
 ```
+
+After then, you can visit the webpage by localhost:5006
