@@ -220,7 +220,7 @@ $ python3 ${PROJ_ROOT_DIR}/collect.py
 [MESSAGE] Inserting Fetched Data to Local...
 ```
 
-### Show the WebPage as A Server
+### Host The WebPage as A Server
 
 ```
 $bokeh serve --show ${PROJ_ROOT_DIR}/main.py
