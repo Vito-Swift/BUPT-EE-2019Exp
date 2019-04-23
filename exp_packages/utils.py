@@ -5,6 +5,8 @@ import re
 import configparser
 from datetime import datetime
 from multiprocessing.dummy import Pool as ThreadPool
+import gevent
+from gevent import monkey
 
 
 def print_time_stamp(prefix="", end='\n', noise=True):
@@ -14,6 +16,20 @@ def print_time_stamp(prefix="", end='\n', noise=True):
         print(prefix + date_time, end=end)
     else:
         return prefix + date_time
+
+
+def get_fist_positive_closing_value(l):
+    for x in l:
+        if x[-1] > 0:
+            return x[-1]
+    return 1
+
+
+def get_fist_positive_marginal_balance(l):
+    for x in l:
+        if x[-2] > 0:
+            return x[-2]
+    return 1
 
 
 def get_database_info_from_config(path):
@@ -88,7 +104,7 @@ def get_fetched_data(stock_list, url, process_num=100):
                 ret.append([
                     stock_code,
                     stock_name,
-                    snapshot["tdate"],
+                    re.sub(r"(T)", r" ", snapshot["tdate"]),
                     snapshot["rzrqye"],
                     snapshot["close"] if snapshot["close"] != "-" else 0
                 ])
@@ -109,3 +125,30 @@ def get_fetched_data(stock_list, url, process_num=100):
     pool.join()
 
     return ret
+
+
+def filter_growth_rate(stock_list, ldate, rdate, executor, operator, bound):
+    monkey.patch_socket()
+
+    ratio = lambda stock_data_list: (get_fist_positive_closing_value(stock_data_list) - stock_data_list[-1][
+        -1]) / \
+                                    get_fist_positive_closing_value(stock_data_list)
+
+    def is_valid_result(stock_code, ldate, rdate, executor, operator, bound):
+        return stock_code if eval(
+            str(100 * ratio(executor.fetch(constraint={"StockCode": " = '{}' ".format(stock_code),
+                                                       "DataDate": "BETWEEN '{}' AND '{}'".format(
+                                                           ldate, rdate)}))) +
+            operator +
+            bound
+        ) else None
+
+    jobs_list = []
+    for stock_code in stock_list:
+        jobs_list.append(gevent.spawn(
+            is_valid_result,
+            stock_code, ldate, rdate, executor, operator, bound
+        ))
+    gevent.joinall(jobs_list, timeout=10)
+
+    return [r.value for r in jobs_list if r.value]

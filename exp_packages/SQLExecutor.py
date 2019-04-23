@@ -63,29 +63,31 @@ class SQLExecutor:
 
         self.db.commit()
 
-    def fetch(self, **kargs):
+    def fetch(self, stockNameOnly=False, timeIntervalOnly=False, **kargs):
         if self.isConnected:
             query = "SELECT * FROM StockData WHERE 1"
 
-            for col, constraint in kargs.items():
-                query += " AND {} {}".format(col, constraint)
+            if "constraint" in kargs:
+                for col, con in kargs["constraint"].items():
+                    query += " AND ({} {})".format(col, con)
 
-            self.cursor.execute(query + ";")
+            self.cursor.execute(query + " ORDER BY DataDate;")
             result = self.cursor.fetchall()
 
-            if kargs["stockNameOnly"]:
+            if stockNameOnly:
                 ret = {}
                 return {result[i][0]: result[i][1]
                         for i in range(len(result))
                         if result[i][0] not in ret
                         }
 
-            if kargs["timeIntervalOnly"]:
+            if timeIntervalOnly:
                 ret = []
-                return [result[i][2]
-                        for i in range(len(result))
-                        if result[i][2] not in ret
-                        ]
+                for r in result:
+                    if r[2] not in ret:
+                        ret.append(r[2])
+
+                return ret
 
             else:
                 return result

@@ -3,4 +3,7 @@ pymysql
 json
 requests
 xlrd
+gevent
+numpy
+pandas
 configparser
