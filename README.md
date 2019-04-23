@@ -1,6 +1,6 @@
 # BUPT EE Experiment, 2019 Spring
 
-![Demo](https://github.com/Vito-Swift/BUPT-EE-2019Exp/assets/show.png)
+![Demo](https://github.com/Vito-Swift/BUPT-EE-2019Exp/blob/master/assets/show.png)
 
 Environment: Ubuntu 18.04
 
