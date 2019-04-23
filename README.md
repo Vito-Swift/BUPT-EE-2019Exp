@@ -226,4 +226,4 @@ $ python3 ${PROJ_ROOT_DIR}/collect.py
 $bokeh serve --show ${PROJ_ROOT_DIR}/main.py
 ```
 
-After then, you can visit the webpage by localhost:5006
+After then, you can visit the webpage from localhost:5006
