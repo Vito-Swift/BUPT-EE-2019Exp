@@ -148,6 +148,13 @@ Start MySQL as a system service
 sudo systemctl start mysql
 ```
 
+Create Database named `StockDatabase`
+
+```
+$ mysql -u yourusername -p
+mysql> CREATE Database StockDatabase;
+```
+
 Now we have done the configuration of MySQL
 
 ### Install Python Requirements
@@ -163,6 +170,19 @@ Install the required packages using pip3
 pip3 -r ${PROJ_ROOT_DIR}/requirements.txt 
 ```
 
+
 Well done! We have finished all the preparation before emitting the project!
 
+---
 
+### Fetching Data from Website
+
+```
+python3 ${PROJ_ROOT_DIR}/collect.py
+```
+
+### Show the WebPage as A Server
+
+```
+bokeh serve --show ${PROJ_ROOT_DIR}/main.py
+```
