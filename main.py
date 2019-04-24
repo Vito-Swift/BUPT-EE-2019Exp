@@ -2,11 +2,12 @@ from os.path import dirname, join
 import numpy as np
 from bokeh.plotting import figure, curdoc
 from bokeh.layouts import layout, Column
-from bokeh.models import ColumnDataSource, Div, Title
+from bokeh.models import ColumnDataSource, Div
 from bokeh.models.widgets import DateRangeSlider, Select, RadioButtonGroup, Slider, TextInput
 from datetime import date
 from exp_packages.SQLExecutor import SQLExecutor
 from exp_packages.utils import *
+from exp_packages.load_spinning import spinner_script
 
 
 def datetime(x):
@@ -14,6 +15,7 @@ def datetime(x):
 
 
 desc = Div(text=open(join(dirname(__file__), "description.html")).read(), sizing_mode="stretch_width")
+
 
 # Database Essentials
 server, username, password, database = get_database_info_from_config('./exp.conf')
