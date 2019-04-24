@@ -171,7 +171,7 @@ sudo apt install python3 python3-dev
 
 Install the required packages using pip3
 ```
-pip3 -r ${PROJ_ROOT_DIR}/requirements.txt 
+pip3 install -r ${PROJ_ROOT_DIR}/requirements.txt 
 ```
 
 
