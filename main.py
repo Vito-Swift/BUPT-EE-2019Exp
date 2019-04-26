@@ -3,11 +3,12 @@ import numpy as np
 from bokeh.plotting import figure, curdoc
 from bokeh.layouts import layout, Column
 from bokeh.models import ColumnDataSource, Div
+from bokeh.models.callbacks import CustomJS
 from bokeh.models.widgets import DateRangeSlider, Select, RadioButtonGroup, Slider, TextInput
 from datetime import date
 from exp_packages.SQLExecutor import SQLExecutor
 from exp_packages.utils import *
-from exp_packages.load_spinning import spinner_script
+from exp_packages.loadingOverlay import loadingOverlay_js
 
 
 def datetime(x):
@@ -15,7 +16,6 @@ def datetime(x):
 
 
 desc = Div(text=open(join(dirname(__file__), "description.html")).read(), sizing_mode="stretch_width")
-
 
 # Database Essentials
 server, username, password, database = get_database_info_from_config('./exp.conf')
@@ -25,6 +25,9 @@ data_date = [d[:10] for d in executor.fetch(timeIntervalOnly=True)]
 date_form = lambda d: date(*map(int, d.split('-')))
 
 # Widgets
+show_btnGroup = RadioButtonGroup(name="Loading",
+                                 labels=["show", "hide"],
+                                 active=1)
 mb_btnGroup = RadioButtonGroup(name="mb_btngroup",
                                labels=["less than", "disable", "greater than"],
                                active=1,
@@ -85,6 +88,8 @@ def sql_result_to_dict(result):
 
 
 def update():
+    show_btnGroup.active = 0
+
     query = dict()
     query["StockCode"] = "LIKE '%{}%'".format(stock_code_input.value) if stock_code_input.value != "" else "LIKE '%%'"
     query["StockName"] = "LIKE '%{}%'".format(stock_name_input.value) if stock_name_input.value != "" else "LIKE '%%'"
@@ -114,18 +119,41 @@ def update():
         }
         sql_dict = filtered_dict
     stock_selector.options = ["{} - {}".format(key, sql_dict[key][0][1]) for key in sql_dict]
-    select_stocks()
+
+    if stock_selector.options:
+        stock_selector.value = stock_selector.options[0]
+        select_stocks()
+
+    show_btnGroup.active = 1
 
 
 controls = [mb_slider, mb_btnGroup, cp_slider, cp_btnGroup, date_range_slider, stock_code_input, stock_name_input,
             stock_selector, option_btnGroup]
-btngroups = [cp_btnGroup, mb_btnGroup, option_btnGroup]
-ssgroups = [c for c in controls if c not in btngroups]
+btngroups = [cp_btnGroup, mb_btnGroup]
+ssgroups = [mb_slider, cp_slider, date_range_slider, stock_code_input, stock_name_input]
+query_loading_spinning = CustomJS(args=dict(), code=loadingOverlay_js+"""
+var spinHandle = loadingOverlay.activate();
+setTimeout(function() {
+   loadingOverlay.cancel(spinHandle);
+},2000);
+""")
+plot_loading_spinning = CustomJS(args=dict(), code=loadingOverlay_js+"""
+var spinHandle = loadingOverlay.activate();
+setTimeout(function() {
+   loadingOverlay.cancel(spinHandle);
+},200);
+""")
 for control in ssgroups:
     control.on_change('value', lambda attr, old, new: update())
+    control.js_on_change('value', query_loading_spinning)
 for control in btngroups:
     control.on_change('active', lambda attr, old, new: update())
+    control.js_on_change('active', query_loading_spinning)
 stock_selector.on_change('value', lambda attr, old, new: select_stocks())
+stock_selector.js_on_change('value', plot_loading_spinning)
+option_btnGroup.on_change('active', lambda attr, old, new: select_stocks())
+option_btnGroup.js_on_change('active', plot_loading_spinning)
+update()
 
 inputs = Column(*controls, width=320, height=600)
 inputs.sizing_mode = "fixed"
@@ -136,4 +164,4 @@ l = layout([
 ], sizing_mode="scale_both")
 
 curdoc().add_root(l)
-curdoc().title = "An Interactive Stock Explorer for Stock Data"
+curdoc().title = "An Interactive Explorer for Stock Data"
