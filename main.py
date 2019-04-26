@@ -3,12 +3,11 @@ import numpy as np
 from bokeh.plotting import figure, curdoc
 from bokeh.layouts import layout, Column
 from bokeh.models import ColumnDataSource, Div
-from bokeh.models.callbacks import CustomJS
 from bokeh.models.widgets import DateRangeSlider, Select, RadioButtonGroup, Slider, TextInput
 from datetime import date
 from exp_packages.SQLExecutor import SQLExecutor
 from exp_packages.utils import *
-from exp_packages.loadingOverlay import loadingOverlay_js
+from exp_packages.jspython import *
 
 
 def datetime(x):
@@ -50,7 +49,7 @@ option_btnGroup = RadioButtonGroup(name="Data Type",
 source = ColumnDataSource(data={"date": [], "price": []})
 TOOLTIPS = [
     ("Title", "@title"),
-    ("Date", "@date"),
+    ("Date", "@date_str"),
     ("Price", "@price")
 ]
 p = figure(x_axis_type="datetime",
@@ -65,6 +64,7 @@ p.xaxis.axis_label = "Date"
 p.xaxis.axis_label_text_font_style = "bold"
 p.yaxis.axis_label = "Price"
 p.yaxis.axis_label_text_font_style = "bold"
+p.left[0].formatter.use_scientific = False
 p.line(x="date", y="price", source=source, color="#33A02C")
 
 
@@ -73,8 +73,11 @@ def select_stocks():
     result = executor.fetch(constraint={"StockCode": " = '{}' ".format(selected_stock_code)})
 
     idx = 3 if option_btnGroup.active == 0 else 4
+    title = "Marginal Balance" if option_btnGroup.active == 0 else "Closing Price"
     data = {
+        "title": [title]*len(result),
         "date": datetime([r[2][:10] for r in result]),
+        "date_str": [r[2][:10] for r in result],
         "price": [r[idx] for r in result],
     }
     source.data.update(ColumnDataSource(data).data)
@@ -131,18 +134,6 @@ controls = [mb_slider, mb_btnGroup, cp_slider, cp_btnGroup, date_range_slider, s
             stock_selector, option_btnGroup]
 btngroups = [cp_btnGroup, mb_btnGroup]
 ssgroups = [mb_slider, cp_slider, date_range_slider, stock_code_input, stock_name_input]
-query_loading_spinning = CustomJS(args=dict(), code=loadingOverlay_js+"""
-var spinHandle = loadingOverlay.activate();
-setTimeout(function() {
-   loadingOverlay.cancel(spinHandle);
-},2000);
-""")
-plot_loading_spinning = CustomJS(args=dict(), code=loadingOverlay_js+"""
-var spinHandle = loadingOverlay.activate();
-setTimeout(function() {
-   loadingOverlay.cancel(spinHandle);
-},200);
-""")
 for control in ssgroups:
     control.on_change('value', lambda attr, old, new: update())
     control.js_on_change('value', query_loading_spinning)
