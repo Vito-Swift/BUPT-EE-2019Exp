@@ -80,6 +80,14 @@ def select_stocks():
         "date_str": [r[2][:10] for r in result],
         "price": [r[idx] for r in result],
     }
+    try:
+        p.x_range.start = min(data["date"])
+        p.x_range.end = max(data["date"])
+        p.y_range.start = min(data["price"])
+        p.y_range.end = max(data["price"])
+    except:
+        pass
+
     source.data.update(ColumnDataSource(data).data)
 
 
