@@ -2,12 +2,27 @@ from os.path import dirname, join
 import numpy as np
 from bokeh.plotting import figure, curdoc
 from bokeh.layouts import layout, Column
+from exp_packages.utils import *
+from bokeh.models.callbacks import CustomJS
+from exp_packages.loadingOverlay import loadingOverlay_js
 from bokeh.models import ColumnDataSource, Div
 from bokeh.models.widgets import DateRangeSlider, Select, RadioButtonGroup, Slider, TextInput
 from datetime import date
 from exp_packages.SQLExecutor import SQLExecutor
-from exp_packages.utils import *
-from exp_packages.jspython import *
+
+
+query_loading_spinning = CustomJS(args=dict(), code=loadingOverlay_js + """
+var spinHandle = loadingOverlay.activate();
+setTimeout(function() {
+   loadingOverlay.cancel(spinHandle);
+},2000);
+""")
+plot_loading_spinning = CustomJS(args=dict(), code=loadingOverlay_js + """
+var spinHandle = loadingOverlay.activate();
+setTimeout(function() {
+   loadingOverlay.cancel(spinHandle);
+},200);
+""")
 
 
 def datetime(x):
@@ -57,6 +72,7 @@ p = figure(x_axis_type="datetime",
            plot_width=600,
            title="",
            toolbar_location=None,
+           tools="",
            tooltips=TOOLTIPS,
            sizing_mode="scale_both")
 p.grid.grid_line_alpha = 0.3
@@ -75,18 +91,11 @@ def select_stocks():
     idx = 3 if option_btnGroup.active == 0 else 4
     title = "Marginal Balance" if option_btnGroup.active == 0 else "Closing Price"
     data = {
-        "title": [title]*len(result),
+        "title": [title] * len(result),
         "date": datetime([r[2][:10] for r in result]),
         "date_str": [r[2][:10] for r in result],
         "price": [r[idx] for r in result],
     }
-    try:
-        p.x_range.start = min(data["date"])
-        p.x_range.end = max(data["date"])
-        p.y_range.start = min(data["price"])
-        p.y_range.end = max(data["price"])
-    except:
-        pass
 
     source.data.update(ColumnDataSource(data).data)
 
@@ -138,22 +147,20 @@ def update():
     show_btnGroup.active = 1
 
 
-qls = query_loading_spinning()
-pls = plot_loading_spinning()
 controls = [mb_slider, mb_btnGroup, cp_slider, cp_btnGroup, date_range_slider, stock_code_input, stock_name_input,
             stock_selector, option_btnGroup]
 btngroups = [cp_btnGroup, mb_btnGroup]
 ssgroups = [mb_slider, cp_slider, date_range_slider, stock_code_input, stock_name_input]
 for control in ssgroups:
     control.on_change('value', lambda attr, old, new: update())
-    control.js_on_change('value', qls)
+    control.js_on_change('value', query_loading_spinning)
 for control in btngroups:
     control.on_change('active', lambda attr, old, new: update())
-    control.js_on_change('active', qls)
+    control.js_on_change('active', query_loading_spinning)
 stock_selector.on_change('value', lambda attr, old, new: select_stocks())
-stock_selector.js_on_change('value', pls)
+stock_selector.js_on_change('value', plot_loading_spinning)
 option_btnGroup.on_change('active', lambda attr, old, new: select_stocks())
-option_btnGroup.js_on_change('active', pls)
+option_btnGroup.js_on_change('active', plot_loading_spinning)
 update()
 
 inputs = Column(*controls, width=320, height=600)
@@ -162,7 +169,7 @@ inputs.sizing_mode = "fixed"
 l = layout([
     [desc],
     [inputs, p]
-], sizing_mode="scale_both")
+], sizing_mode="stretch_both")
 
 curdoc().add_root(l)
 curdoc().title = "An Interactive Explorer for Stock Data"
