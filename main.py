@@ -138,20 +138,22 @@ def update():
     show_btnGroup.active = 1
 
 
+qls = query_loading_spinning()
+pls = plot_loading_spinning()
 controls = [mb_slider, mb_btnGroup, cp_slider, cp_btnGroup, date_range_slider, stock_code_input, stock_name_input,
             stock_selector, option_btnGroup]
 btngroups = [cp_btnGroup, mb_btnGroup]
 ssgroups = [mb_slider, cp_slider, date_range_slider, stock_code_input, stock_name_input]
 for control in ssgroups:
     control.on_change('value', lambda attr, old, new: update())
-    control.js_on_change('value', query_loading_spinning)
+    control.js_on_change('value', qls)
 for control in btngroups:
     control.on_change('active', lambda attr, old, new: update())
-    control.js_on_change('active', query_loading_spinning)
+    control.js_on_change('active', qls)
 stock_selector.on_change('value', lambda attr, old, new: select_stocks())
-stock_selector.js_on_change('value', plot_loading_spinning)
+stock_selector.js_on_change('value', pls)
 option_btnGroup.on_change('active', lambda attr, old, new: select_stocks())
-option_btnGroup.js_on_change('active', plot_loading_spinning)
+option_btnGroup.js_on_change('active', pls)
 update()
 
 inputs = Column(*controls, width=320, height=600)
