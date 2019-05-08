@@ -10,7 +10,6 @@ from bokeh.models.widgets import DateRangeSlider, Select, RadioButtonGroup, Slid
 from datetime import date
 from exp_packages.SQLExecutor import SQLExecutor
 
-
 query_loading_spinning = CustomJS(args=dict(), code=loadingOverlay_js + """
 var spinHandle = loadingOverlay.activate();
 setTimeout(function() {
@@ -51,7 +50,7 @@ cp_btnGroup = RadioButtonGroup(name="cp_btngroup",
                                labels=["less than", "disable", "greater than"],
                                active=1,
                                margin=(0, 0, 20, 0))
-cp_slider = Slider(title="Closing Price Change Ratio (%)", start=-100, end=100, value=0, step=10)
+cp_slider = Slider(title="Closing Price Change Ratio (%)", start=-100, end=100, value=0, step=10, )
 date_range_slider = DateRangeSlider(title="Date range", value=(date_form(data_date[20]), date_form(data_date[-20])),
                                     start=date_form(data_date[0]), end=date_form(data_date[-1]), step=1)
 stock_code_input = TextInput(title="Stock Code")
@@ -150,10 +149,18 @@ def update():
 controls = [mb_slider, mb_btnGroup, cp_slider, cp_btnGroup, date_range_slider, stock_code_input, stock_name_input,
             stock_selector, option_btnGroup]
 btngroups = [cp_btnGroup, mb_btnGroup]
-ssgroups = [mb_slider, cp_slider, date_range_slider, stock_code_input, stock_name_input]
+ssgroups = [stock_code_input, stock_name_input]
+slidergroups = [mb_slider, cp_slider, date_range_slider]
+
+for control in slidergroups:
+    control.callback_policy = 'mouseup'
+    control.callback = query_loading_spinning
+    control.on_change('value', lambda attr, old, new: update())
+
 for control in ssgroups:
     control.on_change('value', lambda attr, old, new: update())
     control.js_on_change('value', query_loading_spinning)
+
 for control in btngroups:
     control.on_change('active', lambda attr, old, new: update())
     control.js_on_change('active', query_loading_spinning)
