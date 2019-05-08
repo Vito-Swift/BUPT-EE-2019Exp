@@ -164,6 +164,7 @@ for control in ssgroups:
 for control in btngroups:
     control.on_change('active', lambda attr, old, new: update())
     control.js_on_change('active', query_loading_spinning)
+
 stock_selector.on_change('value', lambda attr, old, new: select_stocks())
 stock_selector.js_on_change('value', plot_loading_spinning)
 option_btnGroup.on_change('active', lambda attr, old, new: select_stocks())
