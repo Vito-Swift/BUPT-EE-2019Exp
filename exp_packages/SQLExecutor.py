@@ -75,11 +75,8 @@ class SQLExecutor:
             result = self.cursor.fetchall()
 
             if stockNameOnly:
-                ret = {}
                 return {result[i][0]: result[i][1]
-                        for i in range(len(result))
-                        if result[i][0] not in ret
-                        }
+                        for i in range(len(result))}
 
             if timeIntervalOnly:
                 ret = []
