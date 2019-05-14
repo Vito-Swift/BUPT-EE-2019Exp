@@ -1,11 +1,12 @@
 from os.path import dirname, join
 import numpy as np
+import time
 from bokeh.plotting import figure, curdoc
 from bokeh.layouts import layout, Column
 from exp_packages.utils import *
 from bokeh.models.callbacks import CustomJS
 from exp_packages.loadingOverlay import loadingOverlay_js
-from bokeh.models import ColumnDataSource, Div
+from bokeh.models import ColumnDataSource, Div, Range1d, LinearAxis
 from bokeh.models.widgets import DateRangeSlider, Select, RadioButtonGroup, Slider, TextInput
 from datetime import date
 from exp_packages.SQLExecutor import SQLExecutor
@@ -15,6 +16,12 @@ var spinHandle = loadingOverlay.activate();
 setTimeout(function() {
    loadingOverlay.cancel(spinHandle);
 },2000);
+""")
+slider_loading_spinning = CustomJS(args=dict(), code=loadingOverlay_js + """
+var spinHandle = loadingOverlay.activate();
+setTimeout(function() {
+   loadingOverlay.cancel(spinHandle);
+},4000);
 """)
 plot_loading_spinning = CustomJS(args=dict(), code=loadingOverlay_js + """
 var spinHandle = loadingOverlay.activate();
@@ -56,11 +63,10 @@ date_range_slider = DateRangeSlider(title="Date range", value=(date_form(data_da
 stock_code_input = TextInput(title="Stock Code")
 stock_name_input = TextInput(title="Stock Name")
 stock_selector = Select(title="Choose Stock to Plot")
-option_btnGroup = RadioButtonGroup(name="Data Type",
-                                   labels=["Marginal Balance", " Closing Price "],
-                                   active=0)
 
-source = ColumnDataSource(data={"date": [], "price": []})
+mb_source = ColumnDataSource(data={"date": [], "price": []})
+cp_source = ColumnDataSource(data={"date": [], "price": []})
+
 TOOLTIPS = [
     ("Title", "@title"),
     ("Date", "@date_str"),
@@ -80,23 +86,35 @@ p.xaxis.axis_label_text_font_style = "bold"
 p.yaxis.axis_label = "Price"
 p.yaxis.axis_label_text_font_style = "bold"
 p.left[0].formatter.use_scientific = False
-p.line(x="date", y="price", source=source, color="#33A02C")
+p.line(x="date", y="price", source=mb_source, color="#33A02C", legend="Marginal Balance")
+p.extra_y_ranges = {"closing_price": Range1d(start=-100, end=100)}
+p.add_layout(LinearAxis(y_range_name="closing_price"), "right")
+p.line(x="date", y="price", source=cp_source, y_range_name="closing_price", color="orange", line_width=1.5,
+       legend="Closing Price")
 
 
 def select_stocks():
     selected_stock_code = stock_selector.value[:6]
     result = executor.fetch(constraint={"StockCode": " = '{}' ".format(selected_stock_code)})
 
-    idx = 3 if option_btnGroup.active == 0 else 4
-    title = "Marginal Balance" if option_btnGroup.active == 0 else "Closing Price"
-    data = {
-        "title": [title] * len(result),
+    mb_data = {
+        "title": ["Marginal Balance"] * len(result),
         "date": datetime([r[2][:10] for r in result]),
         "date_str": [r[2][:10] for r in result],
-        "price": [r[idx] for r in result],
+        "price": [r[3] for r in result],
+    }
+    cp_data = {
+        "title": ["Closing Price"] * len(result),
+        "date": datetime([r[2][:10] for r in result]),
+        "date_str": [r[2][:10] for r in result],
+        "price": [r[4] for r in result],
     }
 
-    source.data.update(ColumnDataSource(data).data)
+    p.extra_y_ranges["closing_price"].start = int(min(cp_data["price"])) - 5
+    p.extra_y_ranges["closing_price"].end = int(max(cp_data["price"])) + 5
+
+    mb_source.data.update(ColumnDataSource(mb_data).data)
+    cp_source.data.update(ColumnDataSource(cp_data).data)
 
 
 def sql_result_to_dict(result):
@@ -106,20 +124,42 @@ def sql_result_to_dict(result):
     return ret
 
 
+last_slide_time = time.time()
+
+
+def slider_latency():
+    global last_slide_time
+    if time.time() - last_slide_time > 3:
+        last_slide_time = time.time()
+        update()
+
+
 def update():
     show_btnGroup.active = 0
+
+    if isinstance(date_range_slider.value[0], (int, float)):
+        start_date, end_date = time.strftime('%Y-%m-%d', time.localtime(date_range_slider.value[0] / 1000)), \
+                               time.strftime('%Y-%m-%d', time.localtime(date_range_slider.value[1] / 1000))
+    else:
+        start_date, end_date = date_range_slider.value
 
     query = dict()
     query["StockCode"] = "LIKE '%{}%'".format(stock_code_input.value) if stock_code_input.value != "" else "LIKE '%%'"
     query["StockName"] = "LIKE '%{}%'".format(stock_name_input.value) if stock_name_input.value != "" else "LIKE '%%'"
+    query["DataDate"] = "BETWEEN '{}' AND '{}'".format(start_date, end_date)
+
     sql_result = executor.fetch(constraint=query)
     sql_dict = sql_result_to_dict(sql_result)
 
     if cp_btnGroup.active != 1:
         operator = ["<", None, ">"][cp_btnGroup.active]
-        ratio = lambda stock_data_list: (get_fist_positive_closing_value(stock_data_list) - stock_data_list[-1][
+        ratio = lambda stock_data_list: (- get_fist_positive_closing_value(stock_data_list) + stock_data_list[-1][
             -1]) / \
                                         get_fist_positive_closing_value(stock_data_list)
+
+        for stock in sql_dict:
+            print(str(sql_dict[stock][1]) + str(100 * ratio(sql_dict[stock])) + operator + str(cp_slider.value))
+
         filtered_dict = {
             stock: sql_dict[stock]
             for stock in sql_dict
@@ -128,7 +168,7 @@ def update():
         sql_dict = filtered_dict
     if mb_btnGroup.active != 1:
         operator = ["<", None, ">"][mb_btnGroup.active]
-        ratio = lambda stock_data_list: (get_fist_positive_marginal_balance(stock_data_list) - stock_data_list[-1][
+        ratio = lambda stock_data_list: (- get_fist_positive_marginal_balance(stock_data_list) + stock_data_list[-1][
             -2]) / \
                                         get_fist_positive_marginal_balance(stock_data_list)
         filtered_dict = {
@@ -147,7 +187,7 @@ def update():
 
 
 controls = [mb_slider, mb_btnGroup, cp_slider, cp_btnGroup, date_range_slider, stock_code_input, stock_name_input,
-            stock_selector, option_btnGroup]
+            stock_selector]
 btngroups = [cp_btnGroup, mb_btnGroup]
 ssgroups = [stock_code_input, stock_name_input]
 slidergroups = [mb_slider, cp_slider, date_range_slider]
@@ -155,7 +195,7 @@ slidergroups = [mb_slider, cp_slider, date_range_slider]
 for control in slidergroups:
     control.callback_policy = 'mouseup'
     control.callback = query_loading_spinning
-    control.on_change('value', lambda attr, old, new: update())
+    control.on_change('value', lambda attr, old, new: slider_latency)
 
 for control in ssgroups:
     control.on_change('value', lambda attr, old, new: update())
@@ -167,8 +207,6 @@ for control in btngroups:
 
 stock_selector.on_change('value', lambda attr, old, new: select_stocks())
 stock_selector.js_on_change('value', plot_loading_spinning)
-option_btnGroup.on_change('active', lambda attr, old, new: select_stocks())
-option_btnGroup.js_on_change('active', plot_loading_spinning)
 update()
 
 inputs = Column(*controls, width=320, height=600)
