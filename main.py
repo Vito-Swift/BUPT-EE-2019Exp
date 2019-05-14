@@ -157,9 +157,6 @@ def update():
             -1]) / \
                                         get_fist_positive_closing_value(stock_data_list)
 
-        for stock in sql_dict:
-            print(str(sql_dict[stock][1]) + str(100 * ratio(sql_dict[stock])) + operator + str(cp_slider.value))
-
         filtered_dict = {
             stock: sql_dict[stock]
             for stock in sql_dict
