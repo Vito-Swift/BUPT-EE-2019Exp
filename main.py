@@ -83,12 +83,13 @@ p = figure(x_axis_type="datetime",
 p.grid.grid_line_alpha = 0.3
 p.xaxis.axis_label = "Date"
 p.xaxis.axis_label_text_font_style = "bold"
-p.yaxis.axis_label = "Price"
+p.yaxis.axis_label = "Marginal Balance"
 p.yaxis.axis_label_text_font_style = "bold"
 p.left[0].formatter.use_scientific = False
 p.line(x="date", y="price", source=mb_source, color="#33A02C", legend="Marginal Balance")
 p.extra_y_ranges = {"closing_price": Range1d(start=-100, end=100)}
-p.add_layout(LinearAxis(y_range_name="closing_price"), "right")
+p.add_layout(LinearAxis(y_range_name="closing_price", axis_label_text_font_style="bold", axis_label="Closing Price"),
+             "right")
 p.line(x="date", y="price", source=cp_source, y_range_name="closing_price", color="orange", line_width=1.5,
        legend="Closing Price")
 
