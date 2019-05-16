@@ -25,10 +25,24 @@ def get_fist_positive_closing_value(l):
     return 1
 
 
+def get_last_positive_closing_value(l):
+    for x in range(len(l)-1, 0, -1):
+        if l[x][-1] > 0:
+            return l[x][-1]
+    return 1
+
+
 def get_fist_positive_marginal_balance(l):
     for x in l:
         if x[-2] > 0:
             return x[-2]
+    return 1
+
+
+def get_last_positive_marginal_balance(l):
+    for x in range(len(l)-1, 0, -1):
+        if l[x][-2] > 0:
+            return l[x][-2]
     return 1
 
 

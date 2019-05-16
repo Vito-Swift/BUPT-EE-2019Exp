@@ -96,7 +96,11 @@ p.line(x="date", y="price", source=cp_source, y_range_name="closing_price", colo
 
 def select_stocks():
     selected_stock_code = stock_selector.value[:6]
-    result = executor.fetch(constraint={"StockCode": " = '{}' ".format(selected_stock_code)})
+    result = list(executor.fetch(constraint={"StockCode": " = '{}' ".format(selected_stock_code)}))
+
+    for i in range(len(result)):
+        if result[i][-1] == 0 or result[i][-2] == 0:
+            result.pop(i)
 
     mb_data = {
         "title": ["Marginal Balance"] * len(result),
@@ -148,31 +152,33 @@ def update():
     query["StockCode"] = "LIKE '%{}%'".format(stock_code_input.value) if stock_code_input.value != "" else "LIKE '%%'"
     query["StockName"] = "LIKE '%{}%'".format(stock_name_input.value) if stock_name_input.value != "" else "LIKE '%%'"
     query["DataDate"] = "BETWEEN '{}' AND '{}'".format(start_date, end_date)
-    print(query)
+
     sql_result = executor.fetch(constraint=query)
     sql_dict = sql_result_to_dict(sql_result)
 
     if cp_btnGroup.active != 1:
         operator = ["<", None, ">"][cp_btnGroup.active]
-        ratio = lambda stock_data_list: (- get_fist_positive_closing_value(stock_data_list) + stock_data_list[-1][
-            -1]) / \
+        ratio = lambda stock_data_list: (- get_fist_positive_closing_value(
+            stock_data_list) + get_last_positive_closing_value(stock_data_list)) / \
                                         get_fist_positive_closing_value(stock_data_list)
 
         filtered_dict = {
             stock: sql_dict[stock]
             for stock in sql_dict
-            if eval(str(100 * ratio(sql_dict[stock])) + operator + str(cp_slider.value))
+            if ratio(sql_dict[stock]) != 0 and
+               eval(str(100 * ratio(sql_dict[stock])) + operator + str(cp_slider.value))
         }
         sql_dict = filtered_dict
     if mb_btnGroup.active != 1:
         operator = ["<", None, ">"][mb_btnGroup.active]
-        ratio = lambda stock_data_list: (- get_fist_positive_marginal_balance(stock_data_list) + stock_data_list[-1][
-            -2]) / \
+        ratio = lambda stock_data_list: (- get_fist_positive_marginal_balance(
+            stock_data_list) + get_last_positive_marginal_balance(stock_data_list)) / \
                                         get_fist_positive_marginal_balance(stock_data_list)
         filtered_dict = {
             stock: sql_dict[stock]
             for stock in sql_dict
-            if eval(str(100 * ratio(sql_dict[stock])) + operator + str(mb_slider.value))
+            if ratio(sql_dict[stock]) != 0 and
+               eval(str(100 * ratio(sql_dict[stock])) + operator + str(mb_slider.value))
         }
         sql_dict = filtered_dict
     stock_selector.options = ["{} - {}".format(key, sql_dict[key][0][1]) for key in sql_dict]
