@@ -169,6 +169,7 @@ def update():
                eval(str(100 * ratio(sql_dict[stock])) + operator + str(cp_slider.value))
         }
         sql_dict = filtered_dict
+
     if mb_btnGroup.active != 1:
         operator = ["<", None, ">"][mb_btnGroup.active]
         ratio = lambda stock_data_list: (- get_fist_positive_marginal_balance(
