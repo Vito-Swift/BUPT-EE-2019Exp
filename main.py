@@ -130,7 +130,7 @@ last_slide_time = time.time()
 
 def slider_latency():
     global last_slide_time
-    if time.time() - last_slide_time > 3:
+    if time.time() - last_slide_time > 1.5:
         last_slide_time = time.time()
         update()
 
@@ -148,7 +148,7 @@ def update():
     query["StockCode"] = "LIKE '%{}%'".format(stock_code_input.value) if stock_code_input.value != "" else "LIKE '%%'"
     query["StockName"] = "LIKE '%{}%'".format(stock_name_input.value) if stock_name_input.value != "" else "LIKE '%%'"
     query["DataDate"] = "BETWEEN '{}' AND '{}'".format(start_date, end_date)
-
+    print(query)
     sql_result = executor.fetch(constraint=query)
     sql_dict = sql_result_to_dict(sql_result)
 
@@ -193,7 +193,7 @@ slidergroups = [mb_slider, cp_slider, date_range_slider]
 for control in slidergroups:
     control.callback_policy = 'mouseup'
     control.callback = query_loading_spinning
-    control.on_change('value', lambda attr, old, new: slider_latency)
+    control.on_change('value', lambda attr, old, new: slider_latency())
 
 for control in ssgroups:
     control.on_change('value', lambda attr, old, new: update())
